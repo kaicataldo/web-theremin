@@ -1,0 +1,12 @@
+body {
+  font-family: sans-serif;
+}
+
+.video-stream {
+  transform: rotateY(180deg);
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}

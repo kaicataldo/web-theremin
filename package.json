@@ -1,0 +1,22 @@
+{
+  "name": "theremin",
+  "private": true,
+  "version": "1.0.0",
+  "description": "A theremin for your browser!",
+  "main": "index.html",
+  "scripts": {
+    "dev": "parcel index.html",
+    "build": "parcel build index.html",
+    "format": "prettier . --write"
+  },
+  "author": "Kai Cataldo <kai@kaicataldo.com>",
+  "license": "MIT",
+  "dependencies": {
+    "@tensorflow-models/posenet": "^2.2.1",
+    "@tensorflow/tfjs": "^2.0.1"
+  },
+  "devDependencies": {
+    "parcel-bundler": "^1.12.4",
+    "prettier": "^2.0.5"
+  }
+}
