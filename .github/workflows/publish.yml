@@ -4,7 +4,7 @@ on:
     branches:
     - main
 jobs:
-  build:
+  publish:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -21,4 +21,4 @@ jobs:
     - name: Build & deploy site to GitHub Pages
       run: npm run deploy
       env:
-        GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
