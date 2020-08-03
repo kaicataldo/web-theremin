@@ -18,12 +18,19 @@ export default class AudioEngine {
     this.#oscillatorNode.stop();
   }
 
+  // These values are null when no value is given.
   setFrequencyAndGain(frequency, gain) {
-    this.#oscillatorNode.frequency.setValueAtTime(
-      frequency,
+    if (typeof frequency === "number") {
+      this.#oscillatorNode.frequency.setValueAtTime(
+        frequency,
+        this.#audioCtx.currentTime
+      );
+    }
+
+    this.#gainNode.gain.setValueAtTime(
+      typeof gain === "number" ? gain : 0,
       this.#audioCtx.currentTime
     );
-    this.#gainNode.gain.setValueAtTime(gain, this.#audioCtx.currentTime);
   }
 
   #createAudioNodes() {

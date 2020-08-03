@@ -3,7 +3,7 @@ import CoordinateDetector from "./CoordinateDetector";
 import AudioEngine from "./AudioEngine";
 
 export default class Controller {
-  #DETECTION_INTERVAL = 100;
+  #DETECTION_INTERVAL = 20;
 
   #view;
   #coordinateDetector;
@@ -18,15 +18,17 @@ export default class Controller {
   }
 
   async setup() {
-    return Promise.all([this.#view.setup(), this.#coordinateDetector.setup()]);
+    await this.#view.setup();
+    await this.#coordinateDetector.setup();
   }
 
   start() {
+    this.#detect();
+    this.#audioEngine.start();
     this.#intervalId = window.setInterval(
       () => this.#detect(),
       this.#DETECTION_INTERVAL
     );
-    this.#audioEngine.start();
   }
 
   stop() {

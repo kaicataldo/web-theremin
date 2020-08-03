@@ -10,11 +10,17 @@ export default class CoordinateDetector {
   #videoEl;
   #videoElBoundingBox;
   #model;
+  #lastFrequency;
+  #lastGainValue;
+  #numTimesCouldNotCalculateCoords;
 
   constructor(videoEl) {
     this.#videoEl = videoEl;
     this.#videoElBoundingBox = this.#videoEl.getBoundingClientRect();
     this.#model = null;
+    this.#lastFrequency = null;
+    this.#lastGainValue = null;
+    this.#numTimesCouldNotCalculateCoords = 0;
   }
 
   async setup() {
@@ -30,33 +36,61 @@ export default class CoordinateDetector {
     const { keypoints } = await this.#model.estimateSinglePose(this.#videoEl, {
       flipHorizontal: true,
     });
-    // These are switched since the image is flipped.
-    const { position: rightPosition, score: rightScore } = keypoints[
-      this.#LEFT_WRIST_IDX
-    ];
-    const { position: leftPosition, score: leftScore } = keypoints[
-      this.#RIGHT_WRIST_IDX
-    ];
 
     return {
-      frequency:
-        leftScore >= this.#MIN_CONFIDENCE_SCORE
-          ? this.#calculateFrequency(leftPosition)
-          : null,
-      gain:
-        rightScore >= this.#MIN_CONFIDENCE_SCORE
-          ? this.#calculateGain(rightPosition)
-          : null,
+      frequency: this.#calculateFrequency(keypoints[this.#RIGHT_WRIST_IDX]),
+      gain: this.#calculateGain(keypoints[this.#LEFT_WRIST_IDX]),
     };
   }
 
-  #calculateFrequency({ x }) {
-    return window.parseInt(this.#videoElBoundingBox.width - x);
+  #calculateFrequency({ position, score }) {
+    let xCoord =
+      this.#videoElBoundingBox.width -
+      (this.#videoElBoundingBox.width - position.x) -
+      this.#videoElBoundingBox.width / 2;
+    xCoord = xCoord < 0 ? 0 : xCoord;
+    let xPos =
+      score >= this.#MIN_CONFIDENCE_SCORE
+        ? xCoord / (this.#videoElBoundingBox.width / 2)
+        : null;
+    let frequency = null;
+    if (xPos !== null) {
+      // https://en.wikipedia.org/wiki/Cent_(music)
+      // newNote = oldNote * 2 ** (diffInCents / 1200)
+      const C3 = 130;
+      const ratioOfNotesToPercentage = 36 / 100;
+      const centsPerNote = 100;
+      const diffInCents =
+        xPos * 100 * ratioOfNotesToPercentage * centsPerNote - C3;
+      frequency = window.parseInt(C3 * 2 ** (diffInCents / 1200));
+    }
+
+    // This is an attempt to stop the audio from cutting out when the model
+    // is unable to find the position of the frequency hand with certainty.
+    return (this.#lastFrequency = frequency ?? this.#lastFrequency);
   }
 
-  #calculateGain({ y }) {
-    return (
-      (this.#videoElBoundingBox.height - y) / this.#videoElBoundingBox.height
-    );
+  #calculateGain({ position, score }) {
+    const gain =
+      score >= this.#MIN_CONFIDENCE_SCORE
+        ? window.parseFloat(
+            (this.#videoElBoundingBox.height - position.y) /
+              this.#videoElBoundingBox.height
+          )
+        : null;
+
+    if (gain === null) {
+      this.#numTimesCouldNotCalculateCoords += 1;
+
+      if (this.#numTimesCouldNotCalculateCoords > 3) {
+        return null;
+      }
+    } else {
+      this.#numTimesCouldNotCalculateCoords = 0;
+    }
+
+    // This is an attempt to stop the audio from cutting out when the model
+    // is unable to find the position of the frequency hand with certainty.
+    return (this.#lastGainValue = gain ?? this.#lastGainValue);
   }
 }

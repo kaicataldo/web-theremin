@@ -8,11 +8,10 @@ export default class View {
   }
 
   async setup() {
+    const { height, width } = this.#videoEl.getBoundingClientRect();
     // https://github.com/tensorflow/tfjs/issues/322
-    // Video must have height and width in order to be used as input.
-    this.#videoEl.width = 640;
-    // Aspect ratio of 3/4 is used to support Safari browser.
-    this.#videoEl.height = this.#videoEl.width * (3 / 4);
+    this.#videoEl.height = height;
+    this.#videoEl.width = width;
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
