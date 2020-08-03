@@ -16,7 +16,7 @@ export default class CoordinateDetector {
 
   constructor(videoEl) {
     this.#videoEl = videoEl;
-    this.#videoElBoundingBox = this.#videoEl.getBoundingClientRect();
+    this.#videoElBoundingBox = null;
     this.#model = null;
     this.#lastFrequency = null;
     this.#lastGainValue = null;
@@ -24,6 +24,10 @@ export default class CoordinateDetector {
   }
 
   async setup() {
+    // Delay this until setup to ensure that the video element has
+    // height and width attributes applied.
+    this.#videoElBoundingBox = this.#videoEl.getBoundingClientRect();
+
     try {
       this.#model = await posenet.load();
     } catch (e) {
@@ -43,26 +47,39 @@ export default class CoordinateDetector {
     };
   }
 
+  #calculateFrequencyfromPosition(pos) {
+    // https://en.wikipedia.org/wiki/Cent_(music)
+    // newNote = oldNote * 2 ** (diffInCents / 1200)
+    const C3 = 130;
+    const ratioOfNotesToPercentage = 36 / 100;
+    const centsPerNote = 100;
+    const diffInCents =
+      (pos / (this.#videoElBoundingBox.width / 2)) *
+        100 *
+        ratioOfNotesToPercentage *
+        centsPerNote -
+      C3;
+    return C3 * 2 ** (diffInCents / 1200);
+  }
+
   #calculateFrequency({ position, score }) {
-    let xCoord =
-      this.#videoElBoundingBox.width -
-      (this.#videoElBoundingBox.width - position.x) -
-      this.#videoElBoundingBox.width / 2;
-    xCoord = xCoord < 0 ? 0 : xCoord;
-    let xPos =
-      score >= this.#MIN_CONFIDENCE_SCORE
-        ? xCoord / (this.#videoElBoundingBox.width / 2)
-        : null;
     let frequency = null;
-    if (xPos !== null) {
-      // https://en.wikipedia.org/wiki/Cent_(music)
-      // newNote = oldNote * 2 ** (diffInCents / 1200)
-      const C3 = 130;
-      const ratioOfNotesToPercentage = 36 / 100;
-      const centsPerNote = 100;
-      const diffInCents =
-        xPos * 100 * ratioOfNotesToPercentage * centsPerNote - C3;
-      frequency = window.parseInt(C3 * 2 ** (diffInCents / 1200));
+
+    if (typeof position.x === "number") {
+      // Distance from the leftmost edge of the pitch
+      // field (the right half of the video element).
+      let xPos =
+        this.#videoElBoundingBox.width -
+        (this.#videoElBoundingBox.width - position.x) -
+        this.#videoElBoundingBox.width / 2;
+
+      if (xPos < 0) {
+        xPos = 0;
+      }
+
+      if (score >= this.#MIN_CONFIDENCE_SCORE) {
+        frequency = this.#calculateFrequencyfromPosition(xPos);
+      }
     }
 
     // This is an attempt to stop the audio from cutting out when the model
@@ -71,19 +88,30 @@ export default class CoordinateDetector {
   }
 
   #calculateGain({ position, score }) {
-    const gain =
-      score >= this.#MIN_CONFIDENCE_SCORE
-        ? window.parseFloat(
-            (this.#videoElBoundingBox.height - position.y) /
-              this.#videoElBoundingBox.height
-          )
-        : null;
+    let gain = null;
 
+    if (typeof position.y === "number") {
+      const yCoord = this.#videoElBoundingBox.height - position.y;
+
+      if (score >= this.#MIN_CONFIDENCE_SCORE) {
+        gain = Number(
+          Number.parseFloat(
+            yCoord / (this.#videoElBoundingBox.height * (1 / 3))
+          ).toFixed(2)
+        );
+      }
+
+      if (gain > 1) {
+        gain = 1;
+      }
+    }
+
+    // Treat no visible hand as 0.
     if (gain === null) {
       this.#numTimesCouldNotCalculateCoords += 1;
 
-      if (this.#numTimesCouldNotCalculateCoords > 3) {
-        return null;
+      if (this.#numTimesCouldNotCalculateCoords > 4) {
+        return 0;
       }
     } else {
       this.#numTimesCouldNotCalculateCoords = 0;

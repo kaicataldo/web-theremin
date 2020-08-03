@@ -3,7 +3,7 @@ import CoordinateDetector from "./CoordinateDetector";
 import AudioEngine from "./AudioEngine";
 
 export default class Controller {
-  #DETECTION_INTERVAL = 20;
+  #DETECTION_INTERVAL = 10;
 
   #view;
   #coordinateDetector;

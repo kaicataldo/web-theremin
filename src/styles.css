@@ -3,6 +3,7 @@ body {
 }
 
 .video-stream {
+  display: block;
   transform: rotateY(180deg);
   left: 0;
   top: 0;

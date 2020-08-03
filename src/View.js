@@ -8,11 +8,6 @@ export default class View {
   }
 
   async setup() {
-    const { height, width } = this.#videoEl.getBoundingClientRect();
-    // https://github.com/tensorflow/tfjs/issues/322
-    this.#videoEl.height = height;
-    this.#videoEl.width = width;
-
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: false,
@@ -30,6 +25,13 @@ export default class View {
     return new Promise((resolve) => {
       this.#videoEl.onloadeddata = () => {
         this.#videoEl.play();
+
+        // Wait until we the video is rendered before calcuating bounding box.
+        // https://github.com/tensorflow/tfjs/issues/322
+        const { height, width } = this.#videoEl.getBoundingClientRect();
+        this.#videoEl.height = height;
+        this.#videoEl.width = width;
+
         console.log("Video started!");
         resolve();
       };
