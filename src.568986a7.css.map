@@ -1,0 +1,1 @@
+{"version":3,"sources":["styles.css"],"names":[],"mappings":"AAAA,KACE,sBACF,CAEA,cACE,aAAc,CACd,yBAA0B,CAC1B,MAAO,CACP,KAAM,CACN,UAAW,CACX,WACF","file":"src.568986a7.css","sourceRoot":"..","sourcesContent":["body {\n  font-family: sans-serif;\n}\n\n.video-stream {\n  display: block;\n  transform: rotateY(180deg);\n  left: 0;\n  top: 0;\n  width: 100%;\n  height: 100%;\n}\n"]}
