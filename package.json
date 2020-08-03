@@ -6,7 +6,7 @@
   "main": "index.html",
   "scripts": {
     "dev": "parcel index.html",
-    "build": "parcel build index.html",
+    "build": "parcel build index.html --public-url https://kaicataldo.github.io/web-theremin/",
     "format": "prettier . --write",
     "deploy": "npm run build && gh-pages -d dist -r https://$GH_TOKEN@github.com/kaicataldo/web-theremin.git"
   },
